@@ -1,0 +1,16 @@
+../Core/Src/HAL/bmp280_program.c:26:24:BMP280_WriteRegister	3
+../Core/Src/HAL/bmp280_program.c:36:24:BMP280_ReadRegisters	6
+../Core/Src/HAL/bmp280_program.c:49:24:BMP280_ReadRegister	1
+../Core/Src/HAL/bmp280_program.c:57:24:BMP280_ReadCalibrationData	2
+../Core/Src/HAL/bmp280_program.c:78:16:BMP280_CompensateTemperature	1
+../Core/Src/HAL/bmp280_program.c:87:17:BMP280_CompensatePressure	2
+../Core/Src/HAL/bmp280_program.c:108:17:BMP280_Initialize	5
+../Core/Src/HAL/bmp280_program.c:135:17:BMP280_Reset	2
+../Core/Src/HAL/bmp280_program.c:142:17:BMP280_Configure	3
+../Core/Src/HAL/bmp280_program.c:151:17:BMP280_SetMode	2
+../Core/Src/HAL/bmp280_program.c:159:17:BMP280_GetChipID	2
+../Core/Src/HAL/bmp280_program.c:165:17:BMP280_ReadSensorData	3
+../Core/Src/HAL/bmp280_program.c:180:17:BMP280_ReadTemperature	2
+../Core/Src/HAL/bmp280_program.c:188:17:BMP280_ReadPressure	2
+../Core/Src/HAL/bmp280_program.c:196:17:BMP280_IsMeasuring	3
+../Core/Src/HAL/bmp280_program.c:205:17:BMP280_GetConfig	4

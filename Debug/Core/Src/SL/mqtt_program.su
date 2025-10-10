@@ -1,0 +1,10 @@
+../Core/Src/SL/mqtt_program.c:36:13:MQTT_WriteUTF8String	32	static
+../Core/Src/SL/mqtt_program.c:47:16:MQTT_CalculateConnectRemainingLength	24	static
+../Core/Src/SL/mqtt_program.c:56:16:MQTT_CalculatePublishRemainingLength	24	static
+../Core/Src/SL/mqtt_program.c:66:16:MQTT_CalculateSubscribeRemainingLength	24	static
+../Core/Src/SL/mqtt_program.c:74:22:MQTT_SendPacket	24	static
+../Core/Src/SL/mqtt_program.c:101:15:MQTT_Connect	24	static
+../Core/Src/SL/mqtt_program.c:142:15:MQTT_Publish	32	static
+../Core/Src/SL/mqtt_program.c:194:15:MQTT_Subscribe	24	static
+../Core/Src/SL/mqtt_program.c:234:15:MQTT_SendPingRequest	8	static
+../Core/Src/SL/mqtt_program.c:245:15:MQTT_Disconnect	16	static
