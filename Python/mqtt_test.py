@@ -1,69 +1,109 @@
 #!/usr/bin/env python3
 """
-Simple PWM Control Script
-Usage: python simple_pwm_test.py [duty_cycle]
-Example: python simple_pwm_test.py 500
+Improved PWM Control Script with Better Synchronization
+Usage: python improved_mqtt_pwm_test.py [duty_cycle]
+Example: python improved_mqtt_pwm_test.py 500
 """
 
 import paho.mqtt.client as mqtt
 import sys
 import time
 import json
+import threading
 
 BROKER = "broker.hivemq.com"
 PORT = 1883
 TOPIC_CONTROL = "devices/stm32/control"
 TOPIC_PWM = "sensors/stm32/pwm"
 
-def on_connect(client, userdata, flags, rc):
-    if rc == 0:
-        print(f"✓ Connected to {BROKER}")
-        client.subscribe(TOPIC_PWM)
-    else:
-        print(f"✗ Connection failed with code {rc}")
-
-def on_message(client, userdata, msg):
-    try:
-        data = json.loads(msg.payload.decode())
-        if 'duty' in data:
-            percentage = (data['duty'] * 100) / 1000
-            print(f"✓ STM32 Response: Duty={data['duty']}/1000 ({percentage:.1f}%)")
-            if 'status' in data:
-                print(f"  Status: {data['status']}")
-        if 'error' in data:
-            print(f"✗ Error from STM32: {data['error']}")
-    except:
-        print(f"  Response: {msg.payload.decode()}")
-
-def send_pwm(duty):
-    """Send single PWM command and exit"""
-    client = mqtt.Client()
-    client.on_connect = on_connect
-    client.on_message = on_message
+class PWMController:
+    def __init__(self):
+        self.connected = threading.Event()
+        self.subscribed = threading.Event()
+        self.response_received = threading.Event()
+        self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+        self.client.on_connect = self.on_connect
+        self.client.on_message = self.on_message
+        self.client.on_subscribe = self.on_subscribe
+        
+    def on_connect(self, client, userdata, flags, reason_code, properties):
+        if reason_code == 0:
+            print(f"✓ Connected to {BROKER}")
+            client.subscribe(TOPIC_PWM)
+        else:
+            print(f"✗ Connection failed with code {reason_code}")
+        self.connected.set()
     
-    print(f"\nSending PWM command: {duty}/1000 ({(duty*100)/1000:.1f}%)")
-    print("-" * 50)
+    def on_subscribe(self, client, userdata, mid, reason_codes, properties):
+        print(f"✓ Subscribed to {TOPIC_PWM}")
+        self.subscribed.set()
     
-    client.connect(BROKER, PORT, 60)
-    client.loop_start()
+    def on_message(self, client, userdata, msg):
+        try:
+            data = json.loads(msg.payload.decode())
+            if 'duty' in data:
+                percentage = (data['duty'] * 100) / 1000
+                print(f"✓ STM32 Response: Duty={data['duty']}/1000 ({percentage:.1f}%)")
+                if 'status' in data:
+                    print(f"  Status: {data['status']}")
+            if 'error' in data:
+                print(f"✗ Error from STM32: {data['error']}")
+            self.response_received.set()
+        except Exception as e:
+            print(f"  Response: {msg.payload.decode()}")
+            self.response_received.set()
     
-    time.sleep(1)  # Wait for connection
+    def send_pwm(self, duty, timeout=5):
+        """Send PWM command with proper synchronization"""
+        print(f"\nSending PWM command: {duty}/1000 ({(duty*100)/1000:.1f}%)")
+        print("-" * 50)
+        
+        # Connect to broker
+        self.client.connect(BROKER, PORT, 100)
+        self.client.loop_start()
+        
+        # Wait for connection
+        if not self.connected.wait(timeout=6):
+            print("✗ Connection timeout")
+            self.cleanup()
+            return False
+        
+        # Wait for subscription to complete
+        if not self.subscribed.wait(timeout=6):
+            print("✗ Subscription timeout")
+            self.cleanup()
+            return False
+        
+        # Now send the command
+        message = json.dumps({"duty": duty})
+        result = self.client.publish(TOPIC_CONTROL, message)
+        
+        if result.rc == mqtt.MQTT_ERR_SUCCESS:
+            print("✓ Command sent, waiting for response...")
+            
+            # Wait for response with timeout
+            if self.response_received.wait(timeout=timeout):
+                print("✓ Response received successfully")
+                success = True
+            else:
+                print(f"✗ No response received within {timeout} seconds")
+                success = False
+        else:
+            print(f"✗ Failed to send command")
+            success = False
+        
+        self.cleanup()
+        return success
     
-    message = json.dumps({"duty": duty})
-    result = client.publish(TOPIC_CONTROL, message)
-    
-    if result.rc == mqtt.MQTT_ERR_SUCCESS:
-        print("✓ Command sent, waiting for response...")
-        time.sleep(2)  # Wait for response
-    else:
-        print(f"✗ Failed to send command")
-    
-    client.loop_stop()
-    client.disconnect()
+    def cleanup(self):
+        """Clean shutdown"""
+        time.sleep(0.5)  # Brief delay to ensure message processing
+        self.client.loop_stop()
+        self.client.disconnect()
 
 def monitor_mode():
     """Continuous monitoring mode"""
-    def on_connect_monitor(client, userdata, flags, rc):
+    def on_connect_monitor(client, userdata, flags, reason_code, properties):
         print(f"✓ Connected to {BROKER}")
         print("\nSubscribed to:")
         client.subscribe("sensors/stm32/mq6")
@@ -74,6 +114,8 @@ def monitor_mode():
         print("  - sensors/stm32/pwm")
         client.subscribe("devices/stm32/status")
         print("  - devices/stm32/status")
+        client.subscribe("sensors/stm32/combined")
+        print("  - sensors/stm32/combined")
         print("\nListening for messages (Ctrl+C to stop)...\n")
     
     def on_message_monitor(client, userdata, msg):
@@ -86,12 +128,12 @@ def monitor_mode():
             print(f"[{timestamp}] {msg.topic}: {msg.payload.decode()}")
         print()
     
-    client = mqtt.Client()
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     client.on_connect = on_connect_monitor
     client.on_message = on_message_monitor
     
     try:
-        client.connect(BROKER, PORT, 60)
+        client.connect(BROKER, PORT, 100)
         client.loop_forever()
     except KeyboardInterrupt:
         print("\n\nStopping monitor...")
@@ -99,21 +141,21 @@ def monitor_mode():
 
 def print_usage():
     print("""
-STM32 PWM Control Script
-========================
+STM32 PWM Control Script (Improved)
+===================================
 
 Usage:
-  python simple_pwm_test.py [duty_cycle]    Send PWM command
-  python simple_pwm_test.py monitor         Monitor all topics
-  python simple_pwm_test.py --help          Show this help
+  python improved_mqtt_pwm_test.py [duty_cycle]    Send PWM command
+  python improved_mqtt_pwm_test.py monitor         Monitor all topics
+  python improved_mqtt_pwm_test.py --help          Show this help
 
 Examples:
-  python simple_pwm_test.py 0      # Turn OFF (0%)
-  python simple_pwm_test.py 250    # Set 25%
-  python simple_pwm_test.py 500    # Set 50%
-  python simple_pwm_test.py 750    # Set 75%
-  python simple_pwm_test.py 1000   # Set 100%
-  python simple_pwm_test.py monitor # Monitor all messages
+  python improved_mqtt_pwm_test.py 0      # Turn OFF (0%)
+  python improved_mqtt_pwm_test.py 250    # Set 25%
+  python improved_mqtt_pwm_test.py 500    # Set 50%
+  python improved_mqtt_pwm_test.py 750    # Set 75%
+  python improved_mqtt_pwm_test.py 1000   # Set 100%
+  python improved_mqtt_pwm_test.py monitor # Monitor all messages
 
 Valid duty cycle range: 0 - 1000
     """)
@@ -140,7 +182,9 @@ def main():
             print(f"  You entered: {duty}")
             sys.exit(1)
         
-        send_pwm(duty)
+        controller = PWMController()
+        success = controller.send_pwm(duty, timeout=5)
+        sys.exit(0 if success else 1)
         
     except ValueError:
         print(f"✗ Error: Invalid duty cycle value: {arg}")

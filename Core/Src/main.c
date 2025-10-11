@@ -552,8 +552,8 @@ void HandleMQTTRunning(void)
 
             PublishMQ6Data();
             PublishBMP280Data();
-            PublishPWMStatus();
-
+//            PublishPWMStatus();
+//        	PublishCombinedData();
         } else {
             PublishSensorStatus();
         }
