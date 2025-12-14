@@ -1,0 +1,12 @@
+../Core/Src/drivers/peripheral/i2c.c:36:34:I2C_GetRegisterPointer	16	static
+../Core/Src/drivers/peripheral/i2c.c:58:14:I2C_Initialize	24	static
+../Core/Src/drivers/peripheral/i2c.c:132:14:I2C_Enable	24	static
+../Core/Src/drivers/peripheral/i2c.c:150:14:I2C_Disable	24	static
+../Core/Src/drivers/peripheral/i2c.c:168:14:I2C_Master_Transmit	32	static
+../Core/Src/drivers/peripheral/i2c.c:224:14:I2C_Master_Receive	32	static
+../Core/Src/drivers/peripheral/i2c.c:274:14:I2C_Slave_Transmit	24	static
+../Core/Src/drivers/peripheral/i2c.c:275:14:I2C_Slave_Receive	24	static
+../Core/Src/drivers/peripheral/i2c.c:286:14:I2C_Set_EventCallback	16	static
+../Core/Src/drivers/peripheral/i2c.c:319:14:I2C_Set_ErrorCallback	16	static
+../Core/Src/drivers/peripheral/i2c.c:347:6:I2C1_EV_IRQHandler	8	static
+../Core/Src/drivers/peripheral/i2c.c:355:6:I2C1_ER_IRQHandler	8	static

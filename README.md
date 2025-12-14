@@ -1,0 +1,269 @@
+# STM32 IoT Sensor Dashboard
+
+A bare-metal embedded system for STM32F401xE that implements an IoT sensor monitoring station with MQTT connectivity, featuring real-time sensor data publishing and remote PWM control.
+
+## System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              CLOUD / NETWORK                                    │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                        MQTT Broker (HiveMQ)                             │    │
+│  │                      broker.hivemq.com:1883                             │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│         ▲                         ▲                         │                   │
+│         │ Publish                 │ Publish                 │ Subscribe         │
+│         │ sensors/stm32/*         │ devices/stm32/status    │ devices/stm32/    │
+│         │                         │                         │ control           │
+└─────────┼─────────────────────────┼─────────────────────────┼───────────────────┘
+          │                         │                         ▼
+┌─────────┴─────────────────────────┴─────────────────────────────────────────────┐
+│                              WiFi MODULE                                        │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                      ESP01 (ESP8266)                                    │    │
+│  │                   AT Command Interface                                  │    │
+│  │                   USART1 @ 115200 baud                                  │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│                                    │                                            │
+│                            USART1 (PA9/PA10)                                    │
+└────────────────────────────────────┼────────────────────────────────────────────┘
+                                     │
+┌────────────────────────────────────┼────────────────────────────────────────────┐
+│                                    ▼                                            │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                     STM32F401xE (Cortex-M4)                             │    │
+│  │                         @ 16 MHz (HSI)                                  │    │
+│  │  ┌───────────────────────────────────────────────────────────────────┐  │    │
+│  │  │                    APPLICATION LAYER                              │  │    │
+│  │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                │  │    │
+│  │  │  │    State    │  │   Sensor    │  │    MQTT     │                │  │    │
+│  │  │  │   Machine   │  │  Handlers   │  │  Publisher  │                │  │    │
+│  │  │  └─────────────┘  └─────────────┘  └─────────────┘                │  │    │
+│  │  └───────────────────────────────────────────────────────────────────┘  │    │
+│  │  ┌───────────────────────────────────────────────────────────────────┐  │    │
+│  │  │                    SERVICE LAYER (SL)                             │  │    │
+│  │  │  ┌─────────────────────────────────────────────────────────────┐  │  │    │
+│  │  │  │                  MQTT Protocol                              │  │  │    │
+│  │  │  │     Connect | Publish | Subscribe | Ping | Disconnect       │  │  │    │
+│  │  │  └─────────────────────────────────────────────────────────────┘  │  │    │
+│  │  └───────────────────────────────────────────────────────────────────┘  │    │
+│  │  ┌───────────────────────────────────────────────────────────────────┐  │    │
+│  │  │                HARDWARE ABSTRACTION LAYER (HAL)                   │  │    │
+│  │  │  ┌───────────┐     ┌───────────┐     ┌───────────┐                │  │    │
+│  │  │  │   ESP01   │     │  BMP280   │     │    MQ6    │                │  │    │
+│  │  │  │  Driver   │     │  Driver   │     │  Driver   │                │  │    │
+│  │  │  │  (WiFi)   │     │(Temp/Pres)│     │   (Gas)   │                │  │    │
+│  │  │  └───────────┘     └───────────┘     └───────────┘                │  │    │
+│  │  └───────────────────────────────────────────────────────────────────┘  │    │
+│  │  ┌───────────────────────────────────────────────────────────────────┐  │    │
+│  │  │             MICROCONTROLLER ABSTRACTION LAYER (MCAL)              │  │    │
+│  │  │  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐  │  │    │
+│  │  │  │ RCC │ │GPIO │ │USART│ │ ADC │ │ I2C │ │ TIM │ │ STK │ │IWDG │  │  │    │
+│  │  │  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘  │  │    │
+│  │  └───────────────────────────────────────────────────────────────────┘  │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                 │
+│    PA0 ─────► LED (Status Indicator)                                            │
+│    PA5 ─────► PWM Output (TIM2 CH1)                                             │
+│    PA2/PA3 ──► USART2 (Debug Console)                                           │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+          │                              │
+          │ ADC (PA1)                    │ I2C1 (PB8/PB9)
+          ▼                              ▼
+┌─────────────────────┐        ┌─────────────────────┐
+│      MQ6 Sensor     │        │    BMP280 Sensor    │
+│    (Gas Detection)  │        │  (Temp & Pressure)  │
+│                     │        │                     │
+│  • LPG Detection    │        │  • Temperature      │
+│  • Analog Output    │        │  • Barometric       │
+│  • Preheat Required │        │    Pressure         │
+│                     │        │  • I2C Interface    │
+└─────────────────────┘        └─────────────────────┘
+```
+
+## Features
+
+- **Multi-Sensor Data Acquisition**
+  - MQ6 gas sensor for LPG/combustible gas detection
+  - BMP280 temperature and barometric pressure sensor
+
+- **MQTT IoT Connectivity**
+  - WiFi connectivity via ESP01 (ESP8266) module
+  - Real-time sensor data publishing to MQTT broker
+  - Remote PWM control via MQTT subscription
+  - JSON-formatted messages for easy integration
+
+- **Robust Operation**
+  - Independent Watchdog (IWDG) for system reliability
+  - State machine architecture for connection management
+  - Automatic error recovery with reconnection attempts
+
+- **PWM Control**
+  - Remote duty cycle control (0-1000 range, 0.1% resolution)
+  - Acknowledgment feedback via MQTT
+
+## Hardware Requirements
+
+| Component | Description | Interface |
+|-----------|-------------|-----------|
+| STM32F401xE | Microcontroller (Cortex-M4) | - |
+| ESP01 | WiFi module (ESP8266) | USART1 (PA9/PA10) |
+| BMP280 | Temperature/Pressure sensor | I2C1 (PB8/PB9) |
+| MQ6 | Gas sensor (LPG/Butane/Propane) | ADC1 (PA1) |
+| LED | Status indicator | GPIO (PA0) |
+
+## Pin Configuration
+
+| Pin | Function | Description |
+|-----|----------|-------------|
+| PA0 | GPIO Output | Status LED |
+| PA1 | ADC1_IN1 | MQ6 analog input |
+| PA2 | USART2_TX | Debug output |
+| PA3 | USART2_RX | Debug input |
+| PA5 | TIM2_CH1 | PWM output |
+| PA9 | USART1_TX | ESP01 TX |
+| PA10 | USART1_RX | ESP01 RX |
+| PB8 | I2C1_SCL | BMP280 clock |
+| PB9 | I2C1_SDA | BMP280 data |
+
+## MQTT Topics
+
+| Topic | Direction | Description |
+|-------|-----------|-------------|
+| `sensors/stm32/mq6` | Publish | MQ6 gas sensor readings |
+| `sensors/stm32/bmp280` | Publish | BMP280 temperature/pressure data |
+| `sensors/stm32/combined` | Publish | Combined sensor data |
+| `sensors/stm32/pwm` | Publish | PWM status/acknowledgment |
+| `devices/stm32/status` | Publish | Device online status |
+| `devices/stm32/control` | Subscribe | PWM control commands |
+
+### Message Formats
+
+**MQ6 Sensor Data:**
+```json
+{
+  "adc_raw": 2048,
+  "voltage_mv": 1650,
+  "gas_ppm": 500,
+  "timestamp": 123456
+}
+```
+
+**BMP280 Sensor Data:**
+```json
+{
+  "temp_c": 25.50,
+  "pressure_hpa": 1013.25,
+  "pressure_pa": 101325,
+  "timestamp": 123456
+}
+```
+
+**PWM Control Command:**
+```json
+{"duty": 500}
+```
+*Note: duty range is 0-1000 (0% to 100%)*
+
+## Building the Project
+
+This project uses STM32CubeIDE with GNU Tools for STM32.
+
+```bash
+# Build
+make -C Debug all
+
+# Clean
+make -C Debug clean
+
+# Full rebuild
+make -C Debug clean && make -C Debug all
+```
+
+## Project Structure
+
+```
+STM32_Dashboard/
+├── Core/
+│   ├── Inc/
+│   │   ├── MCAL/           # Microcontroller Abstraction Layer
+│   │   │   ├── GPIO/       # General Purpose I/O
+│   │   │   ├── USART/      # Serial communication
+│   │   │   ├── ADC/        # Analog-to-Digital Converter
+│   │   │   ├── I2C/        # I2C communication
+│   │   │   ├── TIM/        # Timer/PWM
+│   │   │   ├── STK/        # SysTick timer
+│   │   │   ├── NVIC/       # Interrupt controller
+│   │   │   ├── RCC/        # Clock control
+│   │   │   └── IWDG/       # Independent Watchdog
+│   │   ├── HAL/            # Hardware Abstraction Layer
+│   │   │   ├── ESP/        # ESP01 WiFi driver
+│   │   │   ├── BMP280/     # Temperature/pressure sensor
+│   │   │   └── MQ6/        # Gas sensor
+│   │   └── SL/             # Service Layer
+│   │       └── MQTT/       # MQTT protocol
+│   └── Src/
+│       ├── main.c          # Application entry point
+│       ├── MCAL/           # MCAL implementations
+│       ├── HAL/            # HAL implementations
+│       └── SL/             # Service layer implementations
+├── Debug/                  # Build output
+└── Drivers/                # STM32 HAL drivers
+```
+
+## Configuration
+
+Key configuration parameters in `main.c`:
+
+```c
+/* WiFi Credentials */
+#define WIFI_SSID           "Your_SSID"
+#define WIFI_PASSWORD       "Your_Password"
+
+/* MQTT Broker */
+#define MQTT_BROKER_IP      "broker.hivemq.com"
+#define MQTT_BROKER_PORT    1883
+
+/* Timing */
+#define MQTT_PUBLISH_INTERVAL   10000   // 10 seconds
+#define MQTT_KEEPALIVE_INTERVAL 30000   // 30 seconds
+
+/* Watchdog */
+#define IWDG_TIMEOUT_MS         10000   // 10 seconds
+```
+
+## Application State Machine
+
+```
+┌──────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────────┐
+│   INIT   │────►│ ESP01_INIT  │────►│  WIFI_MODE  │────►│  WIFI_CONNECT   │
+└──────────┘     └─────────────┘     └─────────────┘     └────────┬────────┘
+                                                                   │
+┌──────────┐     ┌─────────────┐     ┌─────────────────┐     ┌────▼────────┐
+│  ERROR   │◄────│  MQTT_SUB   │◄────│ MQTT_PROTOCOL   │◄────│   GET_IP    │
+└────┬─────┘     └──────┬──────┘     └─────────────────┘     └─────────────┘
+     │                  │                      ▲
+     │                  ▼                      │
+     │           ┌─────────────┐               │
+     └──────────►│MQTT_RUNNING │───────────────┘
+      Recovery   └─────────────┘   (on disconnect)
+```
+
+## LED Status Indicators
+
+| Pattern | Meaning |
+|---------|---------|
+| Slow blink (1s) | Normal operation |
+| Fast blink (100ms) | Error state |
+
+## Author
+
+**Ameer Alwadiya**
+
+Version: V2.4.0
+Date: November 2025
+
+## License
+
+This project is provided as-is for educational and development purposes.

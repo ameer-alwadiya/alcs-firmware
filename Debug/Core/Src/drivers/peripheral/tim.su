@@ -1,0 +1,12 @@
+../Core/Src/drivers/peripheral/tim.c:10:6:TIM_Init	24	static
+../Core/Src/drivers/peripheral/tim.c:32:6:TIM_Start	16	static
+../Core/Src/drivers/peripheral/tim.c:43:6:TIM_Stop	16	static
+../Core/Src/drivers/peripheral/tim.c:54:6:TIM_EnableInterrupt	16	static
+../Core/Src/drivers/peripheral/tim.c:65:6:TIM_DisableInterrupt	16	static
+../Core/Src/drivers/peripheral/tim.c:76:6:TIM_ClearInterruptFlag	16	static
+../Core/Src/drivers/peripheral/tim.c:88:10:TIM_GetCounter	16	static
+../Core/Src/drivers/peripheral/tim.c:100:6:TIM_SetCounter	16	static
+../Core/Src/drivers/peripheral/tim.c:114:6:TIM_PWM_Init	24	static
+../Core/Src/drivers/peripheral/tim.c:175:6:TIM_PWM_SetDutyCycle	24	static
+../Core/Src/drivers/peripheral/tim.c:201:6:TIM_Delay_us	16	static
+../Core/Src/drivers/peripheral/tim.c:228:6:TIM_Delay_ms	24	static

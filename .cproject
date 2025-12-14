@@ -69,6 +69,9 @@
 									<listOptionValue builtIn="false" value="../Core/Inc/MCAL/I2C"/>
 									<listOptionValue builtIn="false" value="../Core/Inc/HAL/BMP280"/>
 									<listOptionValue builtIn="false" value="../Core/Inc/MCAL/TIM"/>
+									<listOptionValue builtIn="false" value="../Core/Inc/MCAL/IWDG"/>
+									<listOptionValue builtIn="false" value="../Core/Inc/drivers/peripheral"/>
+									<listOptionValue builtIn="false" value="../Core/Inc/drivers/device"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1199950008" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>

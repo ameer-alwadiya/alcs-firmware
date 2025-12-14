@@ -1,61 +1,32 @@
 {
     "version": "2.0.0",
-    "windows": {
-        "options": {
-            "shell": {
-                "executable": "cmd.exe",
-                "args": ["/d", "/c"]
-            }
-        }
-    },
     "tasks": [
         {
             "type": "shell",
-            "label": "CubeProg: Flash project (SWD)",
-            "command": "STM32_Programmer_CLI",
-            "args": [
-                "--connect",
-                "port=swd",
-                "--download",
-                "${command:cmake.launchTargetPath}",
-                // Let CMake extension decide executable: "${command:cmake.launchTargetPath}",
-                "-hardRst", // Hardware reset - if rst pin is connected
-                "-rst", // Software reset (backup)
-                "--start" // Start execution
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
+            "label": "Build",
+            "command": "${command:stm32-for-vscode.build}",
+            "group": {
+                "kind": "build",
+                "isDefault": true
             },
-            "problemMatcher": []
-        },
-        {
-            "label": "Build + Flash",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "CMake: clean rebuild",
-                "CubeProg: Flash project (SWD)",
-            ]
-        },
-                {
-            "type": "cmake",
-            "label": "CMake: clean rebuild",
-            "command": "cleanRebuild",
-            "targets": [
-                "all"
-            ],
-            "preset": "${command:cmake.activeBuildPresetName}",
-            "group": "build",
-            "problemMatcher": [],
-            "detail": "CMake template clean rebuild task"
+            "problemMatcher": "$gcc"
         },
         {
             "type": "shell",
-            "label": "CubeProg: List all available communication interfaces",
-            "command": "STM32_Programmer_CLI",
-            "args": ["--list"],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
+            "label": "Flash",
+            "command": "${command:stm32-for-vscode.flash}",
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Build + Flash",
+            "command": "${command:stm32-for-vscode.buildAndFlash}",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "type": "shell",
+            "label": "Clean",
+            "command": "${command:stm32-for-vscode.cleanBuild}",
             "problemMatcher": []
         }
     ]

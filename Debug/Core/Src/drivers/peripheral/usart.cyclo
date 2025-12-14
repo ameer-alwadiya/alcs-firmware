@@ -1,0 +1,11 @@
+../Core/Src/drivers/peripheral/usart.c:35:36:USART_GetRegisterPointer	3
+../Core/Src/drivers/peripheral/usart.c:69:16:USART_Initialize	7
+../Core/Src/drivers/peripheral/usart.c:176:16:USART_SendData	7
+../Core/Src/drivers/peripheral/usart.c:222:9:USART_ReadData	2
+../Core/Src/drivers/peripheral/usart.c:245:16:USART_Enable	2
+../Core/Src/drivers/peripheral/usart.c:270:16:USART_Disable	2
+../Core/Src/drivers/peripheral/usart.c:295:16:USART_SetCallback	4
+../Core/Src/drivers/peripheral/usart.c:329:6:USART1_IRQHandler	3
+../Core/Src/drivers/peripheral/usart.c:349:6:USART2_IRQHandler	3
+../Core/Src/drivers/peripheral/usart.c:373:16:USART_WriteByte	4
+../Core/Src/drivers/peripheral/usart.c:409:5:__io_putchar	1

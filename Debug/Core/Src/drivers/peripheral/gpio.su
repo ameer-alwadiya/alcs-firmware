@@ -1,0 +1,9 @@
+../Core/Src/drivers/peripheral/gpio.c:40:6:GPIO_SetPinMode	24	static
+../Core/Src/drivers/peripheral/gpio.c:93:6:GPIO_SetOutputType	16	static
+../Core/Src/drivers/peripheral/gpio.c:155:6:GPIO_SetOutputSpeed	24	static
+../Core/Src/drivers/peripheral/gpio.c:208:6:GPIO_SetPullState	24	static
+../Core/Src/drivers/peripheral/gpio.c:260:9:GPIO_GetPinValue	24	static
+../Core/Src/drivers/peripheral/gpio.c:309:6:GPIO_SetPinValue	16	static
+../Core/Src/drivers/peripheral/gpio.c:389:6:GPIO_DirectSetReset	24	static
+../Core/Src/drivers/peripheral/gpio.c:440:6:GPIO_PinLock	24	static
+../Core/Src/drivers/peripheral/gpio.c:505:6:GPIO_SetPinAltFunction	32	static

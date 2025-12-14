@@ -10,10 +10,10 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include Core/Startup/subdir.mk
--include Core/Src/SL/subdir.mk
--include Core/Src/MCAL/subdir.mk
--include Core/Src/HAL/subdir.mk
+-include Core/Src/drivers/peripheral/subdir.mk
+-include Core/Src/drivers/device/subdir.mk
 -include Core/Src/subdir.mk
+-include Core/.metadata/.plugins/org.eclipse.cdt.make.core/subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -65,8 +65,8 @@ all: main-build
 main-build: STM32_Dashboard.elf secondary-outputs
 
 # Tool invocations
-STM32_Dashboard.elf STM32_Dashboard.map: $(OBJS) $(USER_OBJS) C:\Users\Muro_\Documents\DSP_on_ARM\STM32_Dashboard\STM32F401CDUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "STM32_Dashboard.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Muro_\Documents\DSP_on_ARM\STM32_Dashboard\STM32F401CDUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="STM32_Dashboard.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+STM32_Dashboard.elf STM32_Dashboard.map: $(OBJS) $(USER_OBJS) C:\Users\Muro_\Documents\Embedded\ Projects\Smart\ Lighting\esp_stm32\STM32F401CDUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "STM32_Dashboard.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Muro_\Documents\Embedded Projects\Smart Lighting\esp_stm32\STM32F401CDUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="STM32_Dashboard.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
