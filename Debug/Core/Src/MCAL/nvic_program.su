@@ -1,7 +1,0 @@
-../Core/Src/MCAL/nvic_program.c:37:6:NVIC_EnableInterrupt	16	static
-../Core/Src/MCAL/nvic_program.c:53:6:NVIC_DisableInterrupt	16	static
-../Core/Src/MCAL/nvic_program.c:69:6:NVIC_EnableInterruptPending	16	static
-../Core/Src/MCAL/nvic_program.c:85:6:NVIC_DisableInterruptPending	16	static
-../Core/Src/MCAL/nvic_program.c:101:9:NVIC_IsInterruptActive	24	static
-../Core/Src/MCAL/nvic_program.c:124:6:NVIC_SetInterruptPriority	24	static
-../Core/Src/MCAL/nvic_program.c:164:6:NVIC_SetInterruptGroupMode	16	static

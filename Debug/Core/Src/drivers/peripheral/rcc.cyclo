@@ -1,0 +1,8 @@
+../Core/Src/drivers/peripheral/rcc.c:36:6:RCC_EnablePeripheralClock	5
+../Core/Src/drivers/peripheral/rcc.c:65:6:RCC_DisablePeripheralClock	5
+../Core/Src/drivers/peripheral/rcc.c:92:6:RCC_InitializeSystemClock	3
+../Core/Src/drivers/peripheral/rcc.c:165:14:RCC_EnableLSI	4
+../Core/Src/drivers/peripheral/rcc.c:191:9:RCC_IsLSIReady	2
+../Core/Src/drivers/peripheral/rcc.c:201:19:RCC_GetResetSource	8
+../Core/Src/drivers/peripheral/rcc.c:241:9:RCC_WasResetByIWDG	2
+../Core/Src/drivers/peripheral/rcc.c:251:6:RCC_ClearResetFlags	1

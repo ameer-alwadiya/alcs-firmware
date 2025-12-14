@@ -1,9 +1,0 @@
-../Core/Src/MCAL/gpio_program.c:41:6:GPIO_SetPinMode	24	static
-../Core/Src/MCAL/gpio_program.c:94:6:GPIO_SetOutputType	16	static
-../Core/Src/MCAL/gpio_program.c:156:6:GPIO_SetOutputSpeed	24	static
-../Core/Src/MCAL/gpio_program.c:209:6:GPIO_SetPullState	24	static
-../Core/Src/MCAL/gpio_program.c:261:9:GPIO_GetPinValue	24	static
-../Core/Src/MCAL/gpio_program.c:310:6:GPIO_SetPinValue	16	static
-../Core/Src/MCAL/gpio_program.c:390:6:GPIO_DirectSetReset	24	static
-../Core/Src/MCAL/gpio_program.c:441:6:GPIO_PinLock	24	static
-../Core/Src/MCAL/gpio_program.c:506:6:GPIO_SetPinAltFunction	32	static

@@ -1,0 +1,7 @@
+../Core/Src/drivers/peripheral/nvic.c:35:6:NVIC_EnableInterrupt	2
+../Core/Src/drivers/peripheral/nvic.c:51:6:NVIC_DisableInterrupt	2
+../Core/Src/drivers/peripheral/nvic.c:67:6:NVIC_EnableInterruptPending	2
+../Core/Src/drivers/peripheral/nvic.c:83:6:NVIC_DisableInterruptPending	2
+../Core/Src/drivers/peripheral/nvic.c:99:9:NVIC_IsInterruptActive	2
+../Core/Src/drivers/peripheral/nvic.c:122:6:NVIC_SetInterruptPriority	7
+../Core/Src/drivers/peripheral/nvic.c:162:6:NVIC_SetInterruptGroupMode	1

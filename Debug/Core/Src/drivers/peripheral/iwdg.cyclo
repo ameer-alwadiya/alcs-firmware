@@ -1,0 +1,3 @@
+../Core/Src/drivers/peripheral/iwdg.c:23:22:IWDG_WaitForUpdate	4
+../Core/Src/drivers/peripheral/iwdg.c:37:15:IWDG_Initialize	6
+../Core/Src/drivers/peripheral/iwdg.c:78:15:IWDG_Refresh	1

@@ -1,0 +1,16 @@
+../Core/Src/drivers/peripheral/adc.c:34:34:ADC_GetRegisterPointer	16	static
+../Core/Src/drivers/peripheral/adc.c:53:21:ADC_SetSampleTime	24	static
+../Core/Src/drivers/peripheral/adc.c:99:14:ADC_Initialize	24	static
+../Core/Src/drivers/peripheral/adc.c:172:14:ADC_Enable	24	static
+../Core/Src/drivers/peripheral/adc.c:197:14:ADC_Disable	24	static
+../Core/Src/drivers/peripheral/adc.c:222:14:ADC_StartConversion	24	static
+../Core/Src/drivers/peripheral/adc.c:275:14:ADC_StartContinuousConversion	24	static
+../Core/Src/drivers/peripheral/adc.c:331:14:ADC_StopConversion	24	static
+../Core/Src/drivers/peripheral/adc.c:356:14:ADC_ReadValue	24	static
+../Core/Src/drivers/peripheral/adc.c:393:14:ADC_ReadValueBlocking	32	static
+../Core/Src/drivers/peripheral/adc.c:446:14:ADC_IsConversionComplete	24	static
+../Core/Src/drivers/peripheral/adc.c:476:14:ADC_SetCallback	16	static
+../Core/Src/drivers/peripheral/adc.c:503:14:ADC_Calibrate	24	static
+../Core/Src/drivers/peripheral/adc.c:533:7:ADC_ConvertToVoltage	24	static
+../Core/Src/drivers/peripheral/adc.c:552:7:ADC_ConvertToTemperature	24	static
+../Core/Src/drivers/peripheral/adc.c:580:6:ADC_IRQHandler	8	static

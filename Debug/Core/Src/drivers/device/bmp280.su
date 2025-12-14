@@ -1,0 +1,16 @@
+../Core/Src/drivers/device/bmp280.c:24:24:BMP280_WriteRegister	32	static
+../Core/Src/drivers/device/bmp280.c:34:24:BMP280_ReadRegisters	24	static
+../Core/Src/drivers/device/bmp280.c:47:24:BMP280_ReadRegister	16	static
+../Core/Src/drivers/device/bmp280.c:55:24:BMP280_ReadCalibrationData	32	static
+../Core/Src/drivers/device/bmp280.c:76:16:BMP280_CompensateTemperature	24	static
+../Core/Src/drivers/device/bmp280.c:85:17:BMP280_CompensatePressure	328	static
+../Core/Src/drivers/device/bmp280.c:106:17:BMP280_Initialize	24	static
+../Core/Src/drivers/device/bmp280.c:133:17:BMP280_Reset	16	static
+../Core/Src/drivers/device/bmp280.c:140:17:BMP280_Configure	24	static
+../Core/Src/drivers/device/bmp280.c:149:17:BMP280_SetMode	24	static
+../Core/Src/drivers/device/bmp280.c:157:17:BMP280_GetChipID	16	static
+../Core/Src/drivers/device/bmp280.c:163:17:BMP280_ReadSensorData	32	static
+../Core/Src/drivers/device/bmp280.c:178:17:BMP280_ReadTemperature	32	static
+../Core/Src/drivers/device/bmp280.c:186:17:BMP280_ReadPressure	32	static
+../Core/Src/drivers/device/bmp280.c:194:17:BMP280_IsMeasuring	24	static
+../Core/Src/drivers/device/bmp280.c:203:17:BMP280_GetConfig	24	static
