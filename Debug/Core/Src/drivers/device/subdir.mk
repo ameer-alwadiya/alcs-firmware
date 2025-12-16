@@ -3,27 +3,27 @@
 # Toolchain: GNU Tools for STM32 (13.3.rel1)
 ################################################################################
 
-# Add inputs and outputs from these tool invocations to the build variables
+# Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Core/Src/drivers/device/bmp280.c \
 ../Core/Src/drivers/device/esp01.c \
 ../Core/Src/drivers/device/mq6.c \
 ../Core/Src/drivers/device/mqtt.c \
-../Core/Src/drivers/device/tsl2561.c
+../Core/Src/drivers/device/tsl2561.c 
 
 OBJS += \
 ./Core/Src/drivers/device/bmp280.o \
 ./Core/Src/drivers/device/esp01.o \
 ./Core/Src/drivers/device/mq6.o \
 ./Core/Src/drivers/device/mqtt.o \
-./Core/Src/drivers/device/tsl2561.o
+./Core/Src/drivers/device/tsl2561.o 
 
 C_DEPS += \
 ./Core/Src/drivers/device/bmp280.d \
 ./Core/Src/drivers/device/esp01.d \
 ./Core/Src/drivers/device/mq6.d \
 ./Core/Src/drivers/device/mqtt.d \
-./Core/Src/drivers/device/tsl2561.d
+./Core/Src/drivers/device/tsl2561.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
