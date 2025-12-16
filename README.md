@@ -342,23 +342,6 @@ The project includes a web dashboard for monitoring and control. See the `webser
 | Slow blink (1s) | Normal operation |
 | Fast blink (100ms) | Error state |
 
-## Application State Machine
-
-```
-+----------+     +-------------+     +-------------+     +-----------------+
-|   INIT   |---->| ESP01_INIT  |---->|  WIFI_MODE  |---->|  WIFI_CONNECT   |
-+----------+     +-------------+     +-------------+     +--------+--------+
-                                                                  |
-+----------+     +-------------+     +-----------------+     +----v--------+
-|  ERROR   |<----|  MQTT_SUB   |<----| MQTT_PROTOCOL   |<----|   GET_IP    |
-+----+-----+     +------+------+     +-----------------+     +-------------+
-     |                  |                      ^
-     |                  v                      |
-     |           +-------------+               |
-     +---------->|MQTT_RUNNING |---------------+
-      Recovery   +-------------+   (on disconnect)
-```
-
 ## Author
 
 **Ameer Alwadiya**
