@@ -3,7 +3,7 @@
 A bare-metal embedded system for STM32F401xE that implements an IoT smart lighting controller with automatic color temperature adjustment based on ambient light and temperature sensors, featuring MQTT connectivity and a web dashboard.
 
 ## System Architecture
-
+![System Diagram](system architecture.svg)
 ```
 +----------------------------------------------------------------------------------+
 |                              CLOUD / NETWORK                                     |
