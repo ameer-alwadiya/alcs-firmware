@@ -1,0 +1,16 @@
+../Core/Src/drivers/device/tsl2561.c:89:25:TSL2561_WriteRegister	3
+../Core/Src/drivers/device/tsl2561.c:106:25:TSL2561_ReadRegister	5
+../Core/Src/drivers/device/tsl2561.c:128:25:TSL2561_ReadWord	5
+../Core/Src/drivers/device/tsl2561.c:156:17:TSL2561_CalculateLux	21
+../Core/Src/drivers/device/tsl2561.c:257:18:TSL2561_Initialize	5
+../Core/Src/drivers/device/tsl2561.c:310:18:TSL2561_Configure	2
+../Core/Src/drivers/device/tsl2561.c:328:18:TSL2561_SetIntegrationTime	1
+../Core/Src/drivers/device/tsl2561.c:338:18:TSL2561_SetGain	1
+../Core/Src/drivers/device/tsl2561.c:348:18:TSL2561_PowerOn	2
+../Core/Src/drivers/device/tsl2561.c:361:18:TSL2561_PowerOff	2
+../Core/Src/drivers/device/tsl2561.c:373:18:TSL2561_GetChipID	2
+../Core/Src/drivers/device/tsl2561.c:381:18:TSL2561_ReadRawData	6
+../Core/Src/drivers/device/tsl2561.c:408:18:TSL2561_ReadSensorData	5
+../Core/Src/drivers/device/tsl2561.c:439:18:TSL2561_ReadLux	4
+../Core/Src/drivers/device/tsl2561.c:456:18:TSL2561_GetConfig	3
+../Core/Src/drivers/device/tsl2561.c:477:9:TSL2561_IsInitialized	1

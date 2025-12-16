@@ -32,6 +32,7 @@
 #include "mq6.h"
 #include "bmp280.h"
 #include "tsl2561.h"
+#include "smart_light.h"
 
 /****************************************************************************/
 /* Configuration                                                            */
@@ -132,12 +133,12 @@ static uint32_t g_mqtt_keepalive_timer = 0;
 static uint32_t g_iwdg_refresh_timer = 0;
 static bool g_led_state = false;
 static bool g_error_led_state = false;
-static uint32_t g_current_pwm_duty = 0;
 static uint8_t g_system_healthy = 1;
 
-/* Deferred PWM ACK - to avoid blocking during MQTT callback */
-static volatile uint8_t g_pwm_ack_pending = 0;
-static volatile uint32_t g_pwm_ack_duty = 0;
+/* Deferred Light ACK - to avoid blocking during MQTT callback */
+static volatile uint8_t g_light_ack_pending = 0;
+static volatile SmartLight_Channels_t g_light_ack_channels = { 0, 0, 0 };
+static volatile SmartLight_Mode_t g_light_ack_mode = SMART_LIGHT_MODE_MANUAL;
 
 /****************************************************************************/
 /* ADC Callback                                                             */
@@ -200,12 +201,27 @@ void GPIO_Init(void)
     GPIO_SetOutputSpeed(GPIO_PORT_B, GPIO_PIN_9, GPIO_OUTPUT_SPEED_HIGH);
     GPIO_SetPullState(GPIO_PORT_B, GPIO_PIN_9, GPIO_PULL_UP);
 
-    /* TIM2 pins for channel 1 (PA5 = PWM) */
+    /* TIM2 pins for three PWM channels (color temperature LEDs) */
+    /* PA5 = TIM2_CH1 = Warm White (3000K) */
     GPIO_SetPinMode(GPIO_PORT_A, GPIO_PIN_5, GPIO_MODE_ALTF);
     GPIO_SetPinAltFunction(GPIO_PORT_A, GPIO_PIN_5, GPIO_ALTFN_1);
     GPIO_SetOutputType(GPIO_PORT_A, GPIO_PIN_5, GPIO_OUTPUT_TYPE_PUSH_PULL);
     GPIO_SetOutputSpeed(GPIO_PORT_A, GPIO_PIN_5, GPIO_OUTPUT_SPEED_HIGH);
     GPIO_SetPullState(GPIO_PORT_A, GPIO_PIN_5, GPIO_PULL_FLOATING);
+
+    /* PA6 = TIM2_CH2 = Neutral White (4000K) */
+    GPIO_SetPinMode(GPIO_PORT_A, GPIO_PIN_6, GPIO_MODE_ALTF);
+    GPIO_SetPinAltFunction(GPIO_PORT_A, GPIO_PIN_6, GPIO_ALTFN_1);
+    GPIO_SetOutputType(GPIO_PORT_A, GPIO_PIN_6, GPIO_OUTPUT_TYPE_PUSH_PULL);
+    GPIO_SetOutputSpeed(GPIO_PORT_A, GPIO_PIN_6, GPIO_OUTPUT_SPEED_HIGH);
+    GPIO_SetPullState(GPIO_PORT_A, GPIO_PIN_6, GPIO_PULL_FLOATING);
+
+    /* PA7 = TIM2_CH3 = Cool White (6000K) */
+    GPIO_SetPinMode(GPIO_PORT_A, GPIO_PIN_7, GPIO_MODE_ALTF);
+    GPIO_SetPinAltFunction(GPIO_PORT_A, GPIO_PIN_7, GPIO_ALTFN_1);
+    GPIO_SetOutputType(GPIO_PORT_A, GPIO_PIN_7, GPIO_OUTPUT_TYPE_PUSH_PULL);
+    GPIO_SetOutputSpeed(GPIO_PORT_A, GPIO_PIN_7, GPIO_OUTPUT_SPEED_HIGH);
+    GPIO_SetPullState(GPIO_PORT_A, GPIO_PIN_7, GPIO_PULL_FLOATING);
 }
 
 void NVIC_Init(void)
@@ -653,17 +669,27 @@ void PublishSensorStatus(void)
     }
 }
 
-void PublishPWMStatus(void)
+void PublishLightStatus(void)
 {
-    char messageBuffer[96];
+    char messageBuffer[256];
     uint8_t messageLength;
-    uint32_t duty_percent = (g_current_pwm_duty * 100) / 1000;
+    SmartLight_State_t light_state;
+
+    SmartLight_GetState(&light_state);
 
     messageLength = (uint8_t)snprintf(
         messageBuffer, sizeof(messageBuffer),
-        "{\"duty\":%lu,\"duty_percent\":%lu,"
-        "\"max\":1000,\"timestamp\":%lu}",
-        g_current_pwm_duty, duty_percent, STK_GetMillis());
+        "{\"mode\":\"%s\",\"warm\":%lu,\"neutral\":%lu,\"cool\":%lu,"
+        "\"brightness\":%lu,\"lux\":%lu,\"temp_c100\":%ld,"
+        "\"timestamp\":%lu}",
+        light_state.mode == SMART_LIGHT_MODE_AUTOMATIC ? "auto" : "manual",
+        light_state.channels.warm,
+        light_state.channels.neutral,
+        light_state.channels.cool,
+        light_state.brightness,
+        light_state.last_lux,
+        light_state.last_temp,
+        STK_GetMillis());
 
     if (messageLength > 0) {
         MQTT_Publish(MQTT_TOPIC_PWM, MQTT_QOS_0,
@@ -696,25 +722,65 @@ void HandleMQTTRunning(void)
 }
 
 /****************************************************************************/
-/* Send Deferred PWM ACK                                                    */
+/* Send Deferred Light ACK                                                  */
 /****************************************************************************/
-void SendDeferredPWMAck(void)
+void SendDeferredLightAck(void)
 {
-    if (!g_pwm_ack_pending) {
+    if (!g_light_ack_pending) {
         return;
     }
 
-    uint32_t duty = g_pwm_ack_duty;
-    g_pwm_ack_pending = 0;
+    SmartLight_Channels_t ch = g_light_ack_channels;
+    SmartLight_Mode_t mode = g_light_ack_mode;
+    g_light_ack_pending = 0;
 
-    char ack_buffer[64];
+    char ack_buffer[160];
     uint8_t ack_len = (uint8_t)snprintf(
         ack_buffer, sizeof(ack_buffer),
-        "{\"duty\":%lu,\"status\":\"ok\"}", duty);
-    LOG("[DEBUG] Sending deferred ACK: %s\r\n", ack_buffer);
+        "{\"mode\":\"%s\",\"warm\":%lu,\"neutral\":%lu,\"cool\":%lu,\"status\":\"ok\"}",
+        mode == SMART_LIGHT_MODE_AUTOMATIC ? "auto" : "manual",
+        ch.warm, ch.neutral, ch.cool);
+    LOG("[DEBUG] Sending deferred Light ACK: %s\r\n", ack_buffer);
     MQTT_Publish(MQTT_TOPIC_PWM, MQTT_QOS_0,
                  (uint8_t*)ack_buffer, ack_len);
-    LOG("[DEBUG] ✓ Deferred ACK sent\r\n");
+    LOG("[DEBUG] Deferred Light ACK sent\r\n");
+}
+
+/****************************************************************************/
+/* JSON Parsing Helpers                                                     */
+/****************************************************************************/
+static uint32_t ParseJsonNumber(const char *msg, const char *key, uint32_t default_val)
+{
+    char search[32];
+    snprintf(search, sizeof(search), "\"%s\":", key);
+    char *ptr = strstr(msg, search);
+    if (ptr == NULL) return default_val;
+
+    ptr += strlen(search);
+    while (*ptr == ' ' || *ptr == '\t') ptr++;
+
+    uint32_t val = 0;
+    while (*ptr >= '0' && *ptr <= '9') {
+        val = val * 10 + (*ptr - '0');
+        ptr++;
+    }
+    return val;
+}
+
+static int ParseJsonString(const char *msg, const char *key, char *out, int out_size)
+{
+    char search[32];
+    snprintf(search, sizeof(search), "\"%s\":\"", key);
+    char *ptr = strstr(msg, search);
+    if (ptr == NULL) return 0;
+
+    ptr += strlen(search);
+    int i = 0;
+    while (*ptr != '"' && *ptr != '\0' && i < out_size - 1) {
+        out[i++] = *ptr++;
+    }
+    out[i] = '\0';
+    return i;
 }
 
 /****************************************************************************/
@@ -723,83 +789,91 @@ void SendDeferredPWMAck(void)
 void MQTT_MessageCallback(const char *topic, const uint8_t *payload,
                           uint16_t length)
 {
-    char message[128];
-    uint32_t duty_cycle;
+    char message[192];
 
     LOG("\r\n========================================\r\n");
     LOG("[DEBUG] MQTT Callback triggered!\r\n");
-    LOG("[DEBUG] Timestamp: %lu ms\r\n", STK_GetMillis());
-    LOG("[DEBUG] Topic received: '%s'\r\n", topic);
-    LOG("[DEBUG] Message length: %u bytes\r\n", length);
+    LOG("[DEBUG] Topic: '%s'\r\n", topic);
 
     if (length >= sizeof(message)) {
-        LOG("[DEBUG] Message too long! Truncating from %u to %u bytes\r\n",
-            length, (unsigned int)(sizeof(message) - 1));
         length = sizeof(message) - 1;
     }
 
     memcpy(message, payload, length);
     message[length] = '\0';
 
-    LOG("[DEBUG] Message content: '%s'\r\n", message);
-    LOG("[DEBUG] Expected topic: '%s'\r\n", MQTT_TOPIC_CONTROL);
+    LOG("[DEBUG] Message: '%s'\r\n", message);
 
-    int topic_match = strcmp(topic, MQTT_TOPIC_CONTROL);
-    LOG("[DEBUG] strcmp result: %d (0 = match)\r\n", topic_match);
+    if (strcmp(topic, MQTT_TOPIC_CONTROL) != 0) {
+        LOG("[DEBUG] Topic mismatch, ignoring\r\n");
+        LOG("========================================\r\n\r\n");
+        return;
+    }
 
-    if (topic_match == 0) {
-        LOG("[DEBUG] ✓ Topic matched! Processing command...\r\n");
+    LOG("[DEBUG] Processing light control command...\r\n");
+
+    SmartLight_Channels_t current_channels;
+    SmartLight_GetChannels(&current_channels);
+
+    /* Check for mode setting */
+    char mode_str[16] = {0};
+    if (ParseJsonString(message, "mode", mode_str, sizeof(mode_str)) > 0) {
+        if (strcmp(mode_str, "auto") == 0) {
+            SmartLight_SetMode(SMART_LIGHT_MODE_AUTOMATIC);
+            g_light_ack_mode = SMART_LIGHT_MODE_AUTOMATIC;
+            SmartLight_GetChannels(&g_light_ack_channels);
+            g_light_ack_pending = 1;
+            LOG("[LIGHT] Mode set to AUTOMATIC\r\n");
+            LOG("========================================\r\n\r\n");
+            return;
+        } else if (strcmp(mode_str, "manual") == 0) {
+            SmartLight_SetMode(SMART_LIGHT_MODE_MANUAL);
+            /* Continue to check for channel values */
+        }
+    }
+
+    /* Check for three-channel control (warm, neutral, cool) */
+    char *warm_ptr = strstr(message, "\"warm\":");
+    char *neutral_ptr = strstr(message, "\"neutral\":");
+    char *cool_ptr = strstr(message, "\"cool\":");
+
+    if (warm_ptr || neutral_ptr || cool_ptr) {
+        /* Multi-channel control mode */
+        uint32_t warm = ParseJsonNumber(message, "warm", current_channels.warm);
+        uint32_t neutral = ParseJsonNumber(message, "neutral", current_channels.neutral);
+        uint32_t cool = ParseJsonNumber(message, "cool", current_channels.cool);
+
+        /* Clamp values */
+        if (warm > 1000) warm = 1000;
+        if (neutral > 1000) neutral = 1000;
+        if (cool > 1000) cool = 1000;
+
+        SmartLight_SetChannels(warm, neutral, cool);
+
+        LOG("[LIGHT] Set W:%lu N:%lu C:%lu\r\n", warm, neutral, cool);
+
+        /* Queue ACK */
+        g_light_ack_mode = SMART_LIGHT_MODE_MANUAL;
+        SmartLight_GetChannels(&g_light_ack_channels);
+        g_light_ack_pending = 1;
+    }
+    /* Legacy single-duty support for backward compatibility */
+    else {
         char *duty_str = strstr(message, "\"duty\":");
         if (duty_str != NULL) {
-            LOG("[DEBUG] ✓ Found 'duty' key in message\r\n");
-            duty_str += 7;
-            while (*duty_str == ' ' || *duty_str == '\t') {
-                duty_str++;
-            }
-            LOG("[DEBUG] Parsing from position: '%s'\r\n", duty_str);
-            duty_cycle = 0;
-            int digit_count = 0;
-            while (*duty_str >= '0' && *duty_str <= '9') {
-                duty_cycle = duty_cycle * 10 + (*duty_str - '0');
-                duty_str++;
-                digit_count++;
-            }
-            LOG("[DEBUG] Parsed value: %lu (from %d digits)\r\n",
-                duty_cycle, digit_count);
+            uint32_t duty = ParseJsonNumber(message, "duty", 0);
+            if (duty <= 1000) {
+                /* Apply to all channels equally for legacy support */
+                SmartLight_SetChannels(duty, duty, duty);
+                LOG("[LIGHT] Legacy duty applied: %lu to all channels\r\n", duty);
 
-            if (duty_cycle <= 1000) {
-                LOG("[DEBUG] ✓ Value in valid range (0-1000)\r\n");
-                LOG("[DEBUG] Setting PWM duty cycle...\r\n");
-                g_current_pwm_duty = duty_cycle;
-                TIM_PWM_SetDutyCycle(TIM2, TIM_CHANNEL_1, duty_cycle);
-                uint32_t duty_percent = (duty_cycle * 100) / 1000;
-                LOG("[PWM] ✓ Successfully set to: %lu/1000 (%lu%%)\r\n",
-                    duty_cycle, duty_percent);
-
-                /* Queue ACK to be sent from main loop - don't block here */
-                g_pwm_ack_duty = duty_cycle;
-                g_pwm_ack_pending = 1;
-                LOG("[DEBUG] ACK queued for deferred sending\r\n");
-            } else {
-                LOG("[DEBUG] ✗ Value out of range: %lu > 1000\r\n",
-                    duty_cycle);
+                g_light_ack_mode = SMART_LIGHT_MODE_MANUAL;
+                SmartLight_GetChannels(&g_light_ack_channels);
+                g_light_ack_pending = 1;
             }
-        } else {
-            LOG("[DEBUG] ✗ Could not find '\"duty\":' in message\r\n");
-            LOG("[DEBUG] Message hex dump:\r\n");
-            for (int i = 0; i < length && i < 32; i++) {
-                LOG("%02X ", (uint8_t)message[i]);
-                if ((i + 1) % 16 == 0)
-                    LOG("\r\n");
-            }
-            LOG("\r\n");
         }
-    } else {
-        LOG("[DEBUG] ✗ Topic did NOT match\r\n");
-        LOG("[DEBUG] Received topic length: %d\r\n", (int)strlen(topic));
-        LOG("[DEBUG] Expected topic length: %d\r\n",
-            (int)strlen(MQTT_TOPIC_CONTROL));
     }
+
     LOG("========================================\r\n\r\n");
 }
 
@@ -910,13 +984,13 @@ AppState_t HandleMQTTSubscribe(void)
         LOG("[DEBUG] Callback registered successfully!\r\n");
 
         strcpy(messageBuffer,
-               "{\"status\":\"online\",\"device\":\"STM32_Multi_Sensor\"}");
+               "{\"status\":\"online\",\"device\":\"STM32_Smart_Light\"}");
         uint8_t len = (uint8_t)strlen(messageBuffer);
         MQTT_Publish(MQTT_TOPIC_STATUS, MQTT_QOS_0,
                      (uint8_t*)messageBuffer, len);
         STK_DelayMs(200);
-        PublishPWMStatus();
-        LOG("[DEBUG] System ready to receive MQTT messages on topic: %s\r\n",
+        PublishLightStatus();
+        LOG("[DEBUG] Smart Lighting ready on topic: %s\r\n",
             MQTT_TOPIC_CONTROL);
 
         return APP_STATE_MQTT_RUNNING;
@@ -952,7 +1026,9 @@ int main(void)
         GPIO_Init();
         STK_Initialize();
         NVIC_Init();
-        TIM_PWM_Init(TIM2, TIM_CHANNEL_1, 16, 1000);
+
+        /* Initialize Smart Lighting driver (initializes PWM channels) */
+        SmartLight_Initialize();
 
         if (!USART_Init()) {
             while (1);
@@ -983,19 +1059,20 @@ int main(void)
         }
 
         if (!TSL2561_Init()) {
-            while (1);
+            LOG("Warning: TSL2561 init failed, auto mode may not work\r\n");
+            /* Don't halt - continue without light sensor */
         }
 
         LOG("\r\n========================================\r\n");
-        LOG("Multi-Sensor MQTT System\r\n");
+        LOG("Smart Lighting MQTT System\r\n");
         LOG("IWDG: ENABLED (%dms timeout)\r\n", IWDG_TIMEOUT_MS);
         LOG("========================================\r\n");
         LOG("MQTT Client ID: %s\r\n", MQTT_CLIENT_ID);
         LOG("MQTT Broker: %s:%d\r\n", MQTT_BROKER_IP, MQTT_BROKER_PORT);
         LOG("Sensors: MQ6 (PA1) + BMP280 (I2C) + TSL2561 (I2C)\r\n");
+        LOG("LEDs: Warm(PA5) + Neutral(PA6) + Cool(PA7)\r\n");
         LOG("Control Topic: %s\r\n", MQTT_TOPIC_CONTROL);
         LOG("PWM Topic: %s\r\n", MQTT_TOPIC_PWM);
-        LOG("TSL2561 Topic: %s\r\n", MQTT_TOPIC_TSL2561);
         LOG("========================================\r\n\r\n");
 
         /* Initialize timers */
@@ -1021,11 +1098,14 @@ int main(void)
             ESP01_ProcessMQTTMessages();
         }
 
-        /* Send any deferred PWM ACK after processing all pending messages */
-        SendDeferredPWMAck();
+        /* Send any deferred Light ACK after processing all pending messages */
+        SendDeferredLightAck();
 
         /* Handle MQ6 sensor state */
         HandleMQ6Sensor();
+
+        /* Handle automatic lighting control */
+        SmartLight_AutoTask();
 
         /* Application state machine */
         if (app_state == APP_STATE_ESP01_INIT) {

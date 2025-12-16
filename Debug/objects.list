@@ -3,6 +3,7 @@
 "./Core/Src/drivers/device/esp01.o"
 "./Core/Src/drivers/device/mq6.o"
 "./Core/Src/drivers/device/mqtt.o"
+"./Core/Src/drivers/device/tsl2561.o"
 "./Core/Src/drivers/peripheral/adc.o"
 "./Core/Src/drivers/peripheral/gpio.o"
 "./Core/Src/drivers/peripheral/i2c.o"
