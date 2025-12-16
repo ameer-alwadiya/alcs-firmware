@@ -64,7 +64,7 @@ A bare-metal embedded system for STM32F401xE that implements an IoT smart lighti
 |                                                                                  |
 +----------------------------------------------------------------------------------+
           |                |                              |
-          | ADC (PA1)      | I2C1 (PB8/PB9)              | I2C1 (PB8/PB9)
+          | ADC (PA1)      | I2C1 (PB8/PB9)               | I2C1 (PB8/PB9)
           v                v                              v
 +-------------------+ +-------------------+     +-------------------+
 |    MQ6 Sensor     | |   BMP280 Sensor   |     |  TSL2561 Sensor   |
