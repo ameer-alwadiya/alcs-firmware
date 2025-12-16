@@ -185,38 +185,6 @@ or
 | 500-1000 | 95% |
 | > 1000 | 100% |
 
-## Smart Light Driver API
-
-### Initialization
-```c
-SmartLight_Status_t SmartLight_Initialize(void);
-```
-
-### Mode Control
-```c
-SmartLight_Status_t SmartLight_SetMode(SmartLight_Mode_t mode);
-SmartLight_Status_t SmartLight_GetMode(SmartLight_Mode_t* mode);
-```
-
-### Manual Control
-```c
-SmartLight_Status_t SmartLight_SetChannels(uint32_t warm, uint32_t neutral, uint32_t cool);
-SmartLight_Status_t SmartLight_SetPreset(SmartLight_Preset_t preset, uint32_t brightness);
-SmartLight_Status_t SmartLight_TurnOff(void);
-```
-
-### Automatic Control
-```c
-SmartLight_Status_t SmartLight_UpdateAutomatic(void);
-void SmartLight_AutoTask(void);  // Call from main loop
-```
-
-### Status
-```c
-SmartLight_Status_t SmartLight_GetState(SmartLight_State_t* state);
-SmartLight_Status_t SmartLight_GetChannels(SmartLight_Channels_t* channels);
-```
-
 ## Project Structure
 
 ```
